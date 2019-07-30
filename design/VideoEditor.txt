@@ -1,0 +1,49 @@
+1. onStart()<--VideoEditFragment.java
+  2. new CainMediaPlayer()
+    3. native_setup()
+      4. jni
+        5. new CainMediaPlayer()
+        5. init()
+          6. new GLESDevice()
+          6. new Thread(this)->start()
+            7. thread for callback msg
+1. onSurfaceTextureAvailable(SurfaceTexture surface)
+  2. openMediaPlayer()
+    3. mCainMediaPlayer.setDataSource()
+      4. jni
+        5. new MediaPlayer()
+          6. mediaSync = new MediaSync()
+        5. mediaPlayer->setVideoDevice(videoDevice)
+          6. mediaSync->setVideoDevice(videoDevice)
+    3. new Surface(mSurfaceTexture)
+    3. setSurface(mSurface)
+      4. jni
+        5. window = ANativeWindow_fromSurface(env, surface)
+        5. mp->setVideoSurface(window)
+            6. surfaceCreated(ANativeWindow *window)<--GLESDevice.cpp
+    3. mCainMediaPlayer.prepare()<--CainMediaPlayer.java
+      4. jni
+        5. mp->prepare()<--CainMediaPlayer.cpp
+          6. mediaPlayer->prepare()<--MediaPlayer.cpp
+            7. new Thread(this)->start()
+              8. readPackets()
+                9. avformat_open_input()
+                9. avformat_find_stream_info()
+                9. av_find_best_stream()
+                9. prepareDecoder(video)
+                   10. avcodec_find_decoder()
+                   10. avcodec_open2()
+                   10. new VideoDecoder()
+                9. prepareDecoder(audio)
+                9. videoDecoder->start()
+                9. audioDecoder->start()
+                9. openAudioDevice()
+                9. audioDevice->start()
+                9. mediaSync->start()
+                9. while()
+                  10. av_read_frame()
+                  10. videoDecoder->pushPacket()
+                  10. audioDecoder->pushPacket()
+    3. mCainMediaPlayer.start()
+      4. jni
+        5. mp->start()

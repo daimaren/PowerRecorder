@@ -1,0 +1,55 @@
+代码流程：
+cpp_android_spec下面的代码要重点研究
+从哪里进到RootTests()
+1. onCreate()<--Cocos2dxActivity
+  2. onLoadNativeLibraries()<--Cocos2dxActivity
+  2. init()<--Cocos2dxActivity
+
+runThisTest()
+  new TestController()
+    new RootTests()
+  setCurrTestSuite()<--TestController.cpp
+
+RootTests()
+  init()<--AudioControlTest.cpp
+    create(play)<--TextButton
+    play2d()<--AudioEngine.cpp
+    setFinishCallback()<--AudioEngine.cpp
+
+1. play2d()
+  2. lazyInit()
+  2. new AudioEngineImpl()
+  2. init()<--AudioEngineImpl.cpp
+    3. slCreateEngine() //create engine
+    3. Realize() //realize the engine
+    3. CreateOutputMix() //realize the output mix
+    3. new AudioPlayerProvider()
+  2. _audioEngineImpl->play2d()
+    3. _audioPlayerProvider->getAudioPlayer()
+      4. createUrlAudioPlayer(); //只创建一个player
+        5. new UrlAudioPlayer()
+        5. urlPlayer->prepare() //准备
+      4. preloadEffect() //if it is small file
+        5. AudioDecoderProvider::createAudioDecoder()
+          6. decoder = new AudioDecoderOgg() //if extension is ogg
+          6. decoder = new AudioDecoderMp3() //if extension is mp3
+          6. decoder = new AudioDecoderWav() //if extension is wav
+          6. new AudioDecoderSLES() //others
+          6. decoder->init()
+      4. obtainPcmAudioPlayer() //if pcm data valid
+      4. createUrlAudioPlayer() //if it is not small file
+    3. player->setLoop() //设置循环
+    3. player->play() //开始播放
+  2. audioPathIDMap[filePath].push_back(ret)
+1. pause()
+  2. pause()<--AudioEngineImpl.cpp
+    3. pause()<--IAudioPlayer.cpp
+      4. pause()<--UrlAudioPlayer.cpp
+        5. SetPlayState(pause)
+1. resume()
+  2. resume()<--AudioEngineImpl.cpp
+    3. resume()<--IAudioPlayer.cpp
+1. stop()
+  2. stop()<--AudioEngineImpl.cpp
+    3. stop()<--IAudioPlayer.cpp
+1. end()

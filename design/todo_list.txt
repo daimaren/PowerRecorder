@@ -1,0 +1,3 @@
+第一阶段：UI部分沿用cain camera的UI，加入滤镜处理，设计在updateTexImageFromNative里进行滤镜处理
+第二阶段：在以上基础上，仿照抖音完善滤镜贴纸特效功能
+第三阶段：新建activity, UI部分仿写抖音

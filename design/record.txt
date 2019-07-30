@@ -1,0 +1,118 @@
+先用时序图从整体上理解底层模块实现，分哪些模块，之前怎么交互的
+
+1. initRecordingStudio()<--VideoRecorderActivity.java
+  2. new ChangbaVideoCamera()
+  2. new ChangbaRecordingPreviewScheduler()
+  2. new CommonVideoRecordingStudio()
+1. conClick()<--VideoRecorderActivity.java
+1. startRecordAndPlay()<--VideoRecorderActivity.java //开始放伴奏加录音加录制视频
+  2. initRecordingResource()<--VideoRecordingStudio.java
+    3. getRecorderService()<--MediaRecorderServiceFactory
+      4. getAudioRecorderService()
+        5. new AudioRecordRecorderServiceImpl()
+      4. new MediaRecorderServiceImpl()
+    3. recorderService.initMetaData()
+      4. audioRecorderService.initMetaData()
+        5. audioRecorderService.initMetaData()
+          6. new AudioRecord() 用来录音
+    3. recorderService.initMediaRecorderProcessor()<MediaRecorderServiceImpl.java
+      4. audioRecorderService.initAudioRecorderProcessor()<--AudioRecordRecorderServiceImpl.java
+        5. songstudio.getAudioRecorder()
+        5. recordProcessor.initAudioBufferSize()
+          6. new RecordCorrector()
+    3. getPlayerService()<--PlayerServiceFactory
+      4. new AudioTrackPlayerServiceImpl()
+        5. new NativeMp3Player()
+        5. mediaPlayer.setAudioStreamType()
+        5. mediaPlayer.setOnCompletionListener()
+    3. playerService.setAudioDataSource()
+      4. mediaPlayer.prepare()
+        5. getMp3Decoder()
+          6. new MusicDecoder()
+        5. decoder.init()
+        5. initAudioTrack()
+          6. new AudioTrack()
+        5. startPlayThread()
+          6. run()<--PlayerThread
+            7. decoder.readSamples()
+              8. readSamples()<--MusicDecoder.cpp
+            7. audioTrack.write() //后面这里播放出声音
+  2. sendMessage(START_RECORD)
+  2. recordStart()
+    3. startVideoRecording()
+      4. startConsumer()<--CommonVideoRecordingStudio.java
+        5. startVideoRecord()
+          6. startCommonVideoRecord()
+            7. 初始化3个队列 video audio 伴奏 
+            7. videoPacketConsumerThread->init
+              8. VideoConsumerThread::init()
+                9. buildPublisherInstance()
+                  10. new RecordingH264Publisher()
+                9. videoPublisher->init()
+                  10. avcodec_register_all()
+                  10. av_register_all()
+                  10. avformat_alloc_output_context2()
+                  10. buildVideoStream()
+                    11. add_stream()
+                  10. buildAudioStream()
+                  10. avio_open2()
+             7. videoPacketConsumerThread->startAsync()
+               8.pthread_create(startThread)
+                 9. startThread()
+      4. startProducer()<--CommonVideoRecordingStudio.java
+        5. playerService.start()<--AudioTrackPlayerServiceImpl.java
+          6. mediaPlayer.start() //开始播放
+        5. recorderService.start()
+          6. start()<--MediaRecorderServiceImpl.java
+            7. audioRecorderService.start()
+              8. audioRecord.startRecording()
+              8. new RecordThread()
+                9. run()
+                  10. audioRecord.read()
+                  10. recordProcessor.pushAudioBufferToQueue<--record_processor.cpp 
+                    11. cpyToAudioSamples() //录音如队列
+            7. previewScheduler.startEncoding()
+              8. startEncoding()<--mv_recording_preview_controller.cpp
+                9. new SoftEncoderAdapter() //soft or hw
+                9. encoder->init()
+                9. postMessage(MSG_START_RECORDING)
+                  10. startRecording()
+                    11. createEncoder()
+                      12. new HostGPUCopier()
+                      12. new VideoX264Encoder()
+                      12. init()<--VideoX264Encoder.cpp
+                      12. pthread_create(startEncodeThread)
+                        13. startEncode()
+                          14. getYUY2Packet() //从yuy2队列取数据编码入video packet队列
+                            15. get()<--live_video_packet_queue.cpp 
+                          14. encode()
+                            15. avcodec_encode_video2()
+                            15. this->pushToQueue() //入video packet队列
+                              16. packetPool->pushRecordingVideoPacketToQueue()
+                                17. recordingVideoPacketQueue->put()
+                      12. pthread_create(startDownloadThread)
+                        13. renderLoop()
+                          14. this->loadTexture()
+                             15. yuy2PacketPool->pushYUY2PacketToQueue() //yuv队列入数据
+setCameraPreviewTexture()
+  notifyFrameAvailable()<--ChangbaRecordingPreviewScheduler.java
+    postMessage(MSG_RENDER_FRAME)<--
+      previewController->renderFrame()
+        renderer->processFrame()
+        encoder->encode()
+          pthread_cond_signal() //发信号通知loadtexture
+1. completeRecord()
+  2. recordStop()
+    3. stopRecording()<--VideoRecordingStudio.java
+      4. destroyRecordingResource()
+      4. stopRecord()
+        5. stopVideoRecord()<--VideoStudio.cpp
+          6. stop()<--video_consumer_thread.cpp
+
+
+startCameraPreview
+
+onFrameAvailable
+  notifyFrameAvailable
+
+  

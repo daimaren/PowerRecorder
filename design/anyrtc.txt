@@ -1,0 +1,60 @@
+流程图：
+Host是推流，guest是拉流
+
+GuestActivity.java-->RTMPGuestKit.java-->japp_jni.cc-->JRTMPGuestImpl.cc-->RtmpGuesterImpl.cc-->AnyRtmplayer.cc-->AnyRtmpPull.cc/plydecoder.cc
+HosterActivity.java-->RTMPHosterKit.java-->japp_jni.cc-->JRTMPHostImpl.cc-->RtmpHostImpl.cc-->AnyRtmpstreamer.cc-->AnyRtmpPush.cc/plyencoder.cc
+
+//拉流播放
+1. onCreate()<--GuestActivity.java
+  2. new RTMPGuestKit()<--RTMPGuestKit.java
+    3. nativeCreate()<--japp_jni.cc
+      4. new JRTMPGuestImpl()<--JRTMPGuestImpl.cc
+        5. Create()<--RtmpGuesterImpl.cc
+          6. new RtmpGuesterImpl()<--RtmpGuesterImpl.cc
+            7. Create()<-- anyrtmpplayer.cc
+              8. new AnyRtmplayerImpl<--
+                9. rtc::Thread::Start()
+                  10. OnMessage()
+  2. StartRtmpPlay()<--RTMPGuestKit.java
+    3. nativeStartRtmpPlay()<--japp_jni.cc
+      4. StartRtmpPlay()<--RtmpGuesterImpl.cc
+        5. Create()<--video_render.cc
+          6. CreatePlatformRenderer()
+            7. new AndroidRender() //java层传递下来的render
+            7. render->Init()
+        5. SetVideoRender()<--AnyRtmplayerImpl.cc
+        5. StartPlay()<--AnyRtmplayerImpl.cc
+          6. new PlyDecoder()<--
+            7. Create()<--H264Decoder.cc 调用到webrtc
+            7. InitDecode()<--H264Decoder.cc
+            7. RegisterDecodeCompleteCallback()<--H264Decoder.cc
+            7. new PlyBuffer()<--
+              8. PostDelayed(PB_TICK)<-- 循环获取数据
+                9. DoDecode()
+                  10. OnNeedDecodeData()<--填充buffer
+                     11. 
+          6. new AnyRtmpPull()<--AnyRtmpPull.cc
+            7. srs_rtmp_create()<--srs_librtmp.cc
+            7. new SrsAvcAacCodec()<--
+            7. Start()<--
+              8. Run()<--AnyRtmpPull.cc
+                9. Decode()<--VideoDecoder.cc
+          6. OnRtmplayerStatus()<--
+          6. OnRtmplayerCache()<--
+  ...
+  2. StopRtmpPlay()<--RTMPGuestKit.java
+  2. Clear()<--RTMPGuestKit.java
+    3. nativeStopRtmpPlay()<--
+    3. nativeDestroy()<--
+//推流
+1. onCreate()<--HosterActivity.java
+  2. new RTMPHosterKit()<--
+    2. nativeCreate()<--japp_jni.cc
+      3. new JRTMPHosterImpl()<--
+        4. Create()<--RTMPHost.cc //初始化了回调函数
+  2. SetVideoCapturer()<--
+  2. StartRtmpStream()<--
+    3. 
+  ...
+  2. StopRtmpStream()<--
+  2. Clear()<--

@@ -1,0 +1,139 @@
+1. onClick()<--MainActivity.java
+    2. previewCamera()
+      3. new PreviewEngine()
+      3. new PreviewBuilder()
+        4. new CameraParam()
+      3. startPreview()
+        4. onCreate()<--CameraActivity.java
+          5. faceTrackerRequestNetwork()
+          5. onAttach()<--CameraPreviewFragment.java
+            6. new Handler()
+          5. onCreate()<--CameraPreviewFragment.java
+            6. new PreviewRenderer()
+            6. setxxxCallback()
+            6. initRenderer()<--RenderBuilder.java
+              7. initRenderer()<--PreviewRenderer.java
+                8. new RenderThread().start //start loop
+                8. new RenderHandler()
+          5. onCreateView()<--CameraPreviewFragment.java
+          5. onActivityCreated()<--CameraPreviewFragment.java
+            6. initView()
+              7. PreviewRenderer.getInstance()
+              7. setSurfaceView()
+                8. addCallback()
+                8. surfaceCreated()
+                  9. sendMessage(MSG_SURFACE_CREATED)
+                    10. surfaceCreated()<--RenderThread.java
+                      11. new EglCore()
+                      11. new WindowSurface()
+                      11. new SurfaceTexture()
+                      11. setOnFrameAvailableListener(this)
+                      11. openCamera()
+                        12. CameraEngine.getInstance()
+                        12. openCamera()
+                        12. setPreviewSurface()
+                        12. setPreviewCallbackWithBuffer(this)
+                          13. onPreviewFrame()<--RenderThread.java
+          5. onResume()<--CameraPreviewFragment.java
+
+onPreviewFrame()<--RenderThread.java
+  sendMessage(MSG_PREVIEW_CALLBACK)
+    thread.onPreviewCallback()
+      mCameraParam.cameraCallback.onPreviewCallback()
+        onPreviewCallback()<--CameraPreviewFragment.java
+          requestRender()
+            PreviewRenderer.getInstance()
+            requestRender()<--PreviewRenderer.java
+              requestRender()
+                sendMessage(MSG_RENDER)
+                  thread.drawFrame()
+                    mSurfaceTexture.updateTexImage()
+                    mRenderManager.drawFrame()
+                    HardcodeEncoder.getInstance()
+                    frameAvailable()<--HardcodeEncoder.java
+                      sendMessage(MSG_FRAME_AVAILABLE)
+                        thread.frameAvailable()
+                          frameAvailableSoon()<--MediaEncoder.java
+                            mSync.notifyAll()
+                    drawRecorderFrame()<--HardcodeEncoder.java 提取视频帧，进行编码
+                      sendMessage(MSG_DRAW_FRAME)
+                        thread.drawRecordingFrame()
+                          drawRecordingFrame()
+                            GLES30.glViewport()
+                            mRecordFilter.drawFrame()
+                              GLES30.glUseProgram()
+                              onDrawTexture()
+                                onDrawFrame()
+// 开始录制
+1. onTouchEvent()<--Shutterutton.java
+1. onStartRecord()<--CameraPreviewFragment.java
+  2. PreviewRecorder.getInstance()
+  2. setOutputPath()<--PreviewRecorder.java
+  2. setOnRecordListener()<--PreviewRecorder.java
+  2. startRecord()<--PreviewRecorder.java
+    3. HardcodeEncoder.getInstance()<--HardcodeEncoder.java
+    3. preparedRecorder()<--HardcodeEncoder.java
+      4. new RecordThread()
+      4. mRecordThread.start()
+        5. run()<--RecordThread in HardcodeEncoder.java
+          6. new RecordHandler()
+          6. loop()
+    3. initRecorder()<--HardcodeEncoder.java
+      4. sendMessage(MSG_INIT_RECORDER)
+        5. initRecorder()
+          6. new MediaMuxerWrapper()
+            7. new MediaMuxer()
+          6. new MediaVideoEncoder() 【video数据从哪来】
+              7. new Thread(this).start
+                7. run()
+                  8. drain()
+                    9. muxer.writeSampleData()
+                    9. mMediaCodec.releaseOutputBuffer()
+          6. new MediaAudioEncoder()
+              7. new Thread(this).start
+                7. run()
+                  8. drain()
+                    9. muxer.writeSampleData()
+                    9. mMediaCodec.releaseOutputBuffer()
+          6. mMuxerManager.prepare()
+            8. mVideoEncoder.prepare()
+              9. createEncoderByType()
+              9. mMediaCodec.start()
+              9. onPrepared()
+            8. mAudioEncoder.prepare()
+              9. createEncoderByType()
+              9. mMediaCodec.start()
+              9. onPrepared()
+                10. PreviewRenderer.getInstance()
+                10. startRecording()<--PreviewRenderer.java
+                  11. sendMessage(MSG_START_RECORDING)
+                    12. startRecording()<--RenderThread.java
+                      13. HardcodeEncoder.getInstance()
+                      13. startRecording()
+                        14. startRecording()<--RecordThread in HardcodeEncoder.java
+                          15. new EglCore()
+                          15. initRecordingFilter()
+                          15. startRecording()
+                            16. mVideoEncoder.startRecording()<--MediaVideoEncoder.java
+                              17. mListener.onStarted()
+                            16. mAudioEncoder.startRecording()<--MediaAudioEncoder.java
+                              17. new AudioThread()
+                              17. start()
+                                18. run()
+                                  19. new AudioRecord()
+                                  19. audioRecord.read()
+                                  19. encode()<--
+                                    20. dequeueInputBuffer()
+                                    20. queueInputBuffer()
+                              17. mListener.onStarted()
+                                18. startTimer()
+                                18. mRecordListener.onRecordStarted()<--CameraPreviewFragment.java
+    initTimer()
+// 停止录制
+stopRecord()
+
+视频合成后，进入裁剪视频界面
+VideoCropActivity.java
+  VideoCropFragment.java
+点击下一步，进入编辑界面
+VideoEditActivity.java

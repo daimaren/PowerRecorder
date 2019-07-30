@@ -1,0 +1,3 @@
+include ':app', ':cameralibrary', ':facedetectlibrary', ':filterlibrary', ':videolibrary', ':gdxlibrary', ':shortvideolib',
+        ':landmarklibrary', ':scanlibrary', ':imagelibrary', ':medialibrary', ':utilslibrary', ':vendor_medialib'
+project(':vendor_medialib').projectDir = new File('vendor/medialibrary')

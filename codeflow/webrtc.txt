@@ -1,0 +1,81 @@
+
+1. onCreate()<--CallActivity.java
+  2. createVideoCapturer()<--CallActivity.java
+    3. createCameraCapturer(new Camera2Enumerator())
+    3. createCameraCapturer(new CameraEnumerator)
+      4. enumerator.createCapturer()
+        5.  new Camera1Capturer()
+          6. new CameraEventsHandler()
+
+  2. createVideoSource()<--PeerConnectionFactory.java (sdk\android\api\org\webrtc)
+    3. nativeCreateVideoSource()<--video.cc
+      4. new()<--AndroidVideoTrackSource.cc
+    3. new VideoSource()
+      4. 
+
+  2. videoSource.getCapturerObserver()
+    3. nativeGetInternalSource()<--???
+    3. new NativeCapturerObserver(nativeGetInternalSource())
+
+  2. mVideoCapturer.initialize() //变量赋值
+
+  2. createVideoTrack(videoSource)<--PeerConnectionFactory.java (sdk\android\api\org\webrtc)
+    3. nativeCreateVideoTrack()<--jni
+      4. CreateVideoTrack()<--Peer_connection_factory.cc
+        5. Create()<--Video_track.cc
+          6. new VideoTrack()<--Video_track.cc
+     3. new VideoTrack()<--VideoTrack.java (sdk\android\api\org\webrtc)
+
+  2. mVideoTrack.addSink()<--VideoTrack.java (sdk\android\api\org\webrtc)
+    3. nativeAddSink()<--jni
+
+  2. createAudioSource()<--PeerConnectionFactory.java (sdk\android\api\org\webrtc)
+
+  2. createAudioTrack(audiosource)<--PeerConnectionFactory.java (sdk\android\api\org\webrtc)
+
+  2. mVideoCapturer.startCapture()<--CameraCapture.java
+    3. createSessionInternal()<--CameraCapture.java
+      4. createCameraSession()<--Camera1Capture.java
+        5. Camera1Session.create()<--Camera1Session.java
+          6. Camera.open()
+          6. camera.setPreviewTexture()
+          6. camera.addCallbackBuffer()
+          6. new Camera1Session()<--Camera1Session.java //对接到下面
+          6. callback.onDone()<--CameraCapture.java
+            7. capturerObserver.onCapturerStarted()<--
+
+  2. mVideoCapturer.stopCapture()
+
+1. Camera1Session()<--Camera1Session.java
+  2. startCapturing()<--Camera1Session.java
+    3. listenForBytebufferFrames()<--Camera1Session.java
+      4. camera.setPreviewCallbackWithBuffer(new PreviewCallback())
+        5. onPreviewFrame() //if there is a frame 开始回调
+          6. events.onFrameCaptured()
+            7. onFrameCaptured()<--CameraCapture.java
+              8. capturerObserver.onFrameCaptured()<--NativeCapturerObserver.java
+                9. nativeOnFrameCaptured()<--Native_Capturer_Observer.cc
+                  10. OnFrameCaptured()<--AndroidVideoTrackSource.cc
+                    11. Create()<--video_frame.cc //create buffer
+                    11. CropAndScale()<--Nv12_buffer.cc
+                    11. OnFrame()<--Video_Broadcaster.cc
+                      12. OnFrame()<--VideoSinkWrapper.cc //用于本地预览
+                        13. Java_VideoSink_onFrame()<--VideoSink_jni.h //脚本生成
+                      12. OnFrame()<--VideoStreamEncoder.cc //分发给编码器
+    3. camera.startPreview() //开始预览
+
+1. doStartCall()<--CallActivity.java
+  2. createPeerConnection()<--CallActivity.java
+    3. createPeerConnection()<--PeerConnectionFactory.java (sdk\android\api\org\webrtc)
+    3. connection.addTrack(video)
+    3. connection.addTrack(audio)
+
+
+1. RecreateWebRtcStream()<--Webrtc_video_engine.cc
+  2. CreateVideoSendStream()<--Call.cc
+    3. new VideoSendStream()<--Video_send_stream.cc
+
+
+
+
+
